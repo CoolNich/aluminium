@@ -1,1 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Aluminum-27 Atom Model</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --text-color: #f8fafc;
+            --proton-color: #ef4444;
+            --neutron-color: #eab308;
+            --electron-color: #22c55e;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 { margin-bottom: 5px; color: #fff; }
+        .subtitle { color: #94a3b8; margin-bottom: 20px; }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        #canvas-container {
+            position: relative;
+            background-color: #020617;
+            border: 2px solid #334155;
+        }
+
+        .info-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-item {
+            background: #334155;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label { font-size: 12px; color: #cbd5e1; display: block; }
+        .stat-value { font-size: 20px; font-weight: bold; }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Aluminum-27 Atom Model</h1>
+    <p class="subtitle">Interactive Bohr Model & Subatomic Properties</p>
+
+    <div class="container">
+        <!-- Canvas Visualizer -->
+        <div id="canvas-container" class="card">
+            <canvas id="atomCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <!-- Info & Data Panel -->
+        <div class="info-panel">
+            <div class="card">
+                <h2>Element Properties</h2>
+                <div class="stat-grid">
+                    <div class="stat-item"><span class="stat-label">Name</span><span class="stat-value">Aluminum</span></div>
+                    <div class="stat-item"><span class="stat-label">Symbol</span><span class="stat-value">Al</span></div>
+                    <div class="stat-item"><span class="stat-label">Atomic Number (Z)</span><span class="stat-value">13</span></div>
+                    <div class="stat-item"><span class="stat-label">Mass Number (A)</span><span class="stat-value">27</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Subatomic Key & Legend</h2>
+                <div class="legend-item">
+                    <span class="dot" style="background-color: var(--proton-color);"></span>
+                    <span><strong>Protons (13):</strong> Inside Nucleus</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot" style="background-color: var(--neutron-color);"></span>
+                    <span><strong>Neutrons (14):</strong> Inside Nucleus</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot" style="background-color: var(--electron-color);"></span>
+                    <span><strong>Electrons (13):</strong> Orbiting (Shells: 2, 8, 3)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('atomCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Configuration
+        const shellRadii =; 
+        const electronsPerShell =;
+        const protonColor = '#ef4444';
+        const neutronColor = '#eab308';
+        const electronColor = '#22c55e';
+
+        let angle = 0;
+
+        // Generate static random offsets for 27 nucleons to keep nucleus tightly clustered
+        const nucleons = [];
+        for (let i = 0; i < 27; i++) {
+            const r = Math.random() * 22; // Keep them closely grouped
+            const theta = Math.random() * Math.PI * 2;
+            nucleons.push({
+                x: Math.cos(theta) * r,
+                y: Math.sin(theta) * r,
+                isProton: i < 13 // 13 Protons, 14 Neutrons
+            });
+        }
+
+        function drawAtom() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Electron Orbit Rings
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1.5;
+            shellRadii.forEach(radius => {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // 2. Draw Nucleus Core
+            nucleons.forEach(n => {
+                ctx.beginPath();
+                ctx.arc(centerX + n.x, centerY + n.y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = n.isProton ? protonColor : neutronColor;
+                ctx.fill();
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#020617';
+                ctx.stroke();
+            });
+
+            // Draw a subtle label overlay for the Nucleus
+            ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
+            ctx.fillRect(centerX - 40, centerY - 45, 80, 18);
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('NUCLEUS', centerX, centerY - 32);
+
+            // 3. Draw Orbiting Electrons
+            shellRadii.forEach((radius, shellIndex) => {
+                const count = electronsPerShell[shellIndex];
+                // Reverse rotation directions for visual appeal
+                const direction = shellIndex % 2 === 0 ? 1 : -1; 
+                
+                for (let i = 0; i < count; i++) {
+                    const electronAngle = (angle * direction) + (i * (Math.PI * 2 / count));
+                    const eX = centerX + Math.cos(electronAngle) * radius;
+                    const eY = centerY + Math.sin(electronAngle) * radius;
+
+                    ctx.beginPath();
+                    ctx.arc(eX, eY, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = electronColor;
+                    ctx.fill();
+                    
+                    // Outer glow effect on electrons
+                    ctx.shadowColor = electronColor;
+                    ctx.shadowBlur = 4;
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset
+                }
+            });
+
+            // Increment animation frame speed
+            angle += 0.015;
+            requestAnimationFrame(drawAtom);
+        }
+
+        // Start the animation loop
+        drawAtom();
+    </script>
+</body>
+</html>
 
