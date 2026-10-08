@@ -14,6 +14,10 @@
             --electron-color: #22c55e;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 20px;
@@ -26,15 +30,22 @@
             min-height: 100vh;
         }
 
-        h1 { margin-bottom: 5px; color: #fff; }
-        .subtitle { color: #94a3b8; margin-bottom: 20px; }
+        h1 {
+            margin-bottom: 5px;
+            color: #fff;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
 
         .container {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             max-width: 1000px;
             width: 100%;
         }
@@ -48,8 +59,23 @@
 
         #canvas-container {
             position: relative;
-            background-color: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 520px;
+            height: 520px;
+            background: linear-gradient(180deg, rgba(2, 6, 23, 1), rgba(15, 23, 42, 1));
             border: 2px solid #334155;
+            border-radius: 12px;
+        }
+
+        #atomCanvas {
+            display: block;
+            width: 500px;
+            height: 500px;
+            max-width: 100%;
+            background: radial-gradient(circle at center, #0b1120 0%, #020617 70%);
+            border-radius: 8px;
         }
 
         .info-panel {
@@ -73,8 +99,16 @@
             text-align: center;
         }
 
-        .stat-label { font-size: 12px; color: #cbd5e1; display: block; }
-        .stat-value { font-size: 20px; font-weight: bold; }
+        .stat-label {
+            font-size: 12px;
+            color: #cbd5e1;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
 
         .legend-item {
             display: flex;
@@ -138,9 +172,8 @@
 
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        
-        // Configuration
-        const shellRadii = [80, 160, 220];
+
+        const shellRadii = [75, 145, 205];
         const electronsPerShell = [2, 8, 3];
         const protonColor = '#ef4444';
         const neutronColor = '#eab308';
@@ -148,31 +181,40 @@
 
         let angle = 0;
 
-        // Generate static random offsets for 27 nucleons to keep nucleus tightly clustered
-        const nucleons = [];
-        for (let i = 0; i < 27; i++) {
-            const r = Math.random() * 22; // Keep them closely grouped
-            const theta = Math.random() * Math.PI * 2;
-            nucleons.push({
-                x: Math.cos(theta) * r,
-                y: Math.sin(theta) * r,
-                isProton: i < 13 // 13 Protons, 14 Neutrons
-            });
+        function createNucleus() {
+            const nucleons = [];
+            for (let i = 0; i < 27; i++) {
+                const r = Math.random() * 22;
+                const theta = Math.random() * Math.PI * 2;
+                nucleons.push({
+                    x: Math.cos(theta) * r,
+                    y: Math.sin(theta) * r,
+                    isProton: i < 13
+                });
+            }
+            return nucleons;
         }
+
+        const nucleons = createNucleus();
 
         function drawAtom() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Draw Electron Orbit Rings
+            ctx.save();
             ctx.strokeStyle = '#334155';
             ctx.lineWidth = 1.5;
+
             shellRadii.forEach(radius => {
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
                 ctx.stroke();
             });
 
-            // 2. Draw Nucleus Core
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 34, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+            ctx.stroke();
+
             nucleons.forEach(n => {
                 ctx.beginPath();
                 ctx.arc(centerX + n.x, centerY + n.y, 6, 0, Math.PI * 2);
@@ -183,20 +225,17 @@
                 ctx.stroke();
             });
 
-            // Draw a subtle label overlay for the Nucleus
-            ctx.fillStyle = 'rgba(30, 41, 59, 0.85)';
-            ctx.fillRect(centerX - 40, centerY - 45, 80, 18);
+            ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+            ctx.fillRect(centerX - 48, centerY - 49, 96, 20);
             ctx.fillStyle = '#f8fafc';
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('NUCLEUS', centerX, centerY - 32);
+            ctx.fillText('NUCLEUS', centerX, centerY - 34);
 
-            // 3. Draw Orbiting Electrons
             shellRadii.forEach((radius, shellIndex) => {
                 const count = electronsPerShell[shellIndex];
-                // Reverse rotation directions for visual appeal
-                const direction = shellIndex % 2 === 0 ? 1 : -1; 
-                
+                const direction = shellIndex % 2 === 0 ? 1 : -1;
+
                 for (let i = 0; i < count; i++) {
                     const electronAngle = (angle * direction) + (i * (Math.PI * 2 / count));
                     const eX = centerX + Math.cos(electronAngle) * radius;
@@ -205,22 +244,18 @@
                     ctx.beginPath();
                     ctx.arc(eX, eY, 6, 0, Math.PI * 2);
                     ctx.fillStyle = electronColor;
-                    ctx.fill();
-                    
-                    // Outer glow effect on electrons
                     ctx.shadowColor = electronColor;
-                    ctx.shadowBlur = 4;
+                    ctx.shadowBlur = 8;
                     ctx.fill();
-                    ctx.shadowBlur = 0; // reset
+                    ctx.shadowBlur = 0;
                 }
             });
 
-            // Increment animation frame speed
-            angle += 0.015;
+            ctx.restore();
+            angle += 0.02;
             requestAnimationFrame(drawAtom);
         }
 
-        // Start the animation loop
         drawAtom();
     </script>
 </body>
